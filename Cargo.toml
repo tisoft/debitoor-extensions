@@ -1,0 +1,7 @@
+[package]
+name = "debitoor-extensions"
+version = "0.1.0"
+authors = ["Markus Heberling <markus@tisoft.de>"]
+
+[dependencies]
+hyper = "0.9.14"
