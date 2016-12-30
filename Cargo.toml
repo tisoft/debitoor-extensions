@@ -2,7 +2,12 @@
 name = "debitoor-extensions"
 version = "0.1.0"
 authors = ["Markus Heberling <markus@tisoft.de>"]
+build = "build.rs"
+
+[build-dependencies]
+serde_codegen = "0.8"
 
 [dependencies]
 hyper = { version = "0.9.14", default-features = false, features = ["security-framework"] }
+serde = "0.8"
 serde_json = "0.8"

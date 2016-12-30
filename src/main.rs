@@ -1,3 +1,4 @@
+extern crate serde;
 extern crate serde_json;
 #[macro_use]
 extern crate hyper;
@@ -5,10 +6,11 @@ extern crate hyper;
 use std::env;
 use hyper::Client;
 use hyper::header::Connection;
-use serde_json::Value;
 use std::vec::Vec;
 
 header! { (XToken, "x-token") => [String] }
+
+include!(concat!(env!("OUT_DIR"), "/serde_types.rs"));
 
 fn main() {
     let token = env::args().skip(1).next().unwrap();
@@ -28,11 +30,16 @@ fn main() {
 
     println!("create parser");
 
-    let x: Value = serde_json::from_reader(res).unwrap();
+    let expenses: Vec<Expense> = serde_json::from_reader(res).unwrap();
 
     println!("printing value");
 
-    println!("{:?}", x);
+
+    for expense in expenses {
+        for line in expense.lines.iter().filter(|line| line.category_type == "asset") {
+            println!("{:?}", line);
+        }
+    }
 
     println!("all done");
 }
