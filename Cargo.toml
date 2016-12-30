@@ -4,4 +4,5 @@ version = "0.1.0"
 authors = ["Markus Heberling <markus@tisoft.de>"]
 
 [dependencies]
-hyper = "0.9.14"
+hyper = { version = "0.9.14", default-features = false, features = ["security-framework"] }
+serde_json = "0.8"
