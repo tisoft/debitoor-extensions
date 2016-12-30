@@ -1,10 +1,48 @@
-#[derive(Serialize, Deserialize, Debug)]
+use std::ops::Deref;
+use chrono::UTC;
+use serde::{Deserialize, Deserializer};
+use std::str::FromStr;
+
+// This single-element tuple struct is called a newtype struct.
+#[derive(Debug)]
+struct Date(chrono::Date<UTC>);
+
+impl Deserialize for Date {
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, D::Error>
+        where D: Deserializer
+    {
+        struct Visitor;
+
+        impl ::serde::de::Visitor for Visitor {
+            type Value = Date;
+
+            fn visit_str<E>(&mut self, value: &str) -> Result<Date, E>
+                where E: ::serde::de::Error,
+            {
+                Ok(Date(chrono::Date::from_utc(chrono::naive::date::NaiveDate::from_str(value).unwrap(), UTC)))
+            }
+        }
+
+        // Deserialize the enum from a string.
+        deserializer.deserialize_str(Visitor)
+    }
+}
+
+// Enable `Deref` coercion.
+impl Deref for Date {
+    type Target = chrono::Date<UTC>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[derive(Deserialize, Debug)]
 struct Expense {
     date: String,
     lines: Vec<Line>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 struct Line {
     #[serde(rename = "categoryType")]
     category_type: String,
@@ -14,9 +52,9 @@ struct Line {
     asset_depreciation: Vec<AssetDepreciation>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 struct AssetDepreciation {
     depreciationCost: f64,
-    depreciationDate: String,
+    depreciationDate: Date,
     bookValue: f64,
 }

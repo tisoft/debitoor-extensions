@@ -11,3 +11,4 @@ serde_codegen = "0.8"
 hyper = { version = "0.9.14", default-features = false, features = ["security-framework"] }
 serde = "0.8"
 serde_json = "0.8"
+chrono = { version = "0.2", features = ["serde"] }

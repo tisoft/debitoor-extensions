@@ -2,6 +2,7 @@ extern crate serde;
 extern crate serde_json;
 #[macro_use]
 extern crate hyper;
+extern crate chrono;
 
 use std::env;
 use hyper::Client;
