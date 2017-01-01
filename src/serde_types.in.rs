@@ -58,3 +58,8 @@ struct AssetDepreciation {
     depreciationDate: Date,
     bookValue: f64,
 }
+
+#[derive(Deserialize, Debug)]
+struct AccessToken{
+    access_token: String
+}
