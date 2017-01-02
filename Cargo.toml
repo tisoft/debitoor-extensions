@@ -3,6 +3,7 @@ name = "debitoor-extensions"
 version = "0.1.0"
 authors = ["Markus Heberling <markus@tisoft.de>"]
 build = "build.rs"
+publish = false
 
 [build-dependencies]
 serde_codegen = "0.8"
@@ -12,10 +13,4 @@ serde = "0.8"
 serde_json = "0.8"
 chrono = { version = "0.2", features = ["serde"] }
 
-#use hyper with native security framework on osx
-[target.'cfg(target_os="macos")'.dependencies]
-hyper = { version = "0.9", default-features = false, features = ["security-framework"] }
-
-#use hyper with openssl on other systems
-[target.'cfg(not(target_os="macos"))'.dependencies]
-hyper = { version = "0.9" }
+hyper = { git = "https://github.com/tisoft/hyper", branch = "native_tls", default-features = false, features = ["serde-serialization", "native-tls"] }
