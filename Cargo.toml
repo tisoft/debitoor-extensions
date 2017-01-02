@@ -8,7 +8,14 @@ build = "build.rs"
 serde_codegen = "0.8"
 
 [dependencies]
-hyper = { version = "0.9.14", default-features = false, features = ["security-framework"] }
 serde = "0.8"
 serde_json = "0.8"
 chrono = { version = "0.2", features = ["serde"] }
+
+#use hyper with native security framework on osx
+[target.'cfg(target_os="macos")'.dependencies]
+hyper = { version = "0.9", default-features = false, features = ["security-framework"] }
+
+#use hyper with openssl on other systems
+[target.'cfg(not(target_os="macos"))'.dependencies]
+hyper = { version = "0.9" }
