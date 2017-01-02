@@ -10,7 +10,6 @@ use hyper::Server;
 use hyper::header::Connection;
 use std::vec::Vec;
 use hyper::client::IntoUrl;
-use std::io::Read;
 
 header! { (XToken, "x-token") => [String] }
 
@@ -21,18 +20,18 @@ static DEBITOOR_TOKEN: &'static str = "DEBITOOR_TOKEN";
 fn main() {
     let port = env::var("DEBITOOR_EXTENSIONS_PORT").or(Ok::<String, std::env::VarError>("8080".to_string())).unwrap().parse::<i32>().unwrap();
 
-    fn hello(serverReq: hyper::server::Request, mut serverRes: hyper::server::Response) {
+    fn hello(server_req: hyper::server::Request, mut server_res: hyper::server::Response) {
         let client_id = env::var("CLIENT_ID").unwrap();
         let client_secret = env::var("CLIENT_SECRET").unwrap();
 
-        println!("Incoming request for {:?}", serverReq.uri);
-        let token = serverReq.headers.get::<hyper::header::Cookie>().
+        println!("Incoming request for {:?}", server_req.uri);
+        let token = server_req.headers.get::<hyper::header::Cookie>().
             and_then(|c| c.0.iter().find(|c| c.name == DEBITOOR_TOKEN)).map(|c| c.value.to_owned());
 
         match token {
             None => {
                 //No token, do we have a code?
-                match serverReq.uri {
+                match server_req.uri {
                     hyper::uri::RequestUri::AbsolutePath(ref uri) if uri.contains("code=") => {
                         //we have a code, get a token, set the cookie and redirect back to same page without code
                         let url = format!("http://localhost/{}", uri).into_url().unwrap();
@@ -45,7 +44,7 @@ fn main() {
 
                         println!("body {}", body);
 
-                        let mut res = client.
+                        let res = client.
                             post("https://app.debitoor.com/login/oauth2/access_token").
                             //if we keep the connection open the parsing will wait for a minute in between for a timeout
                             //don't know why this is, so just disable keep alive for now
@@ -55,30 +54,24 @@ fn main() {
                             //the access token to authenticate with
                             send().unwrap();
 
-                        let mut buffer = String::new();
-
-                        res.read_to_string(&mut buffer);
-
-                        println!("response {}", buffer);
-
                         assert_eq!(res.status, hyper::Ok);
 
-                        let access_token: AccessToken = serde_json::from_str(&buffer).unwrap();
+                        let access_token: AccessToken = serde_json::from_reader(res).unwrap();
 
                         println!("{:?}", access_token);
 
                         //set cookie and redirect
-                        serverRes.headers_mut().set(hyper::header::SetCookie(vec![
+                        server_res.headers_mut().set(hyper::header::SetCookie(vec![
                         hyper::header::CookiePair::new(DEBITOOR_TOKEN.to_owned(), access_token.access_token.to_owned())
                         ]));
-                        serverRes.headers_mut().set(hyper::header::Location("/".to_owned()));
-                        *serverRes.status_mut() = hyper::status::StatusCode::TemporaryRedirect;
+                        server_res.headers_mut().set(hyper::header::Location("/".to_owned()));
+                        *server_res.status_mut() = hyper::status::StatusCode::TemporaryRedirect;
                     }
                     _ => {
                         //redirect to debitoor
                         println!("not authenticated, redirecting to debitoor");
-                        serverRes.headers_mut().set(hyper::header::Location(format!("https://app.debitoor.com/login/oauth2/authorize?client_id={}&response_type=code", client_id).to_owned()));
-                        *serverRes.status_mut() = hyper::status::StatusCode::TemporaryRedirect;
+                        server_res.headers_mut().set(hyper::header::Location(format!("https://app.debitoor.com/login/oauth2/authorize?client_id={}&response_type=code", client_id).to_owned()));
+                        *server_res.status_mut() = hyper::status::StatusCode::TemporaryRedirect;
                     }
                 }
             }
@@ -115,7 +108,7 @@ fn main() {
                 }
 
                 println!("Sending response");
-                serverRes.send(asset_string.as_bytes()).unwrap();
+                server_res.send(asset_string.as_bytes()).unwrap();
             }
         }
 

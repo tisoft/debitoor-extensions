@@ -54,12 +54,15 @@ struct Line {
 
 #[derive(Deserialize, Debug)]
 struct AssetDepreciation {
-    depreciationCost: f64,
-    depreciationDate: Date,
-    bookValue: f64,
+    #[serde(rename = "depreciationCost")]
+    depreciation_cost: f64,
+    #[serde(rename = "depreciationDate")]
+    depreciation_date: Date,
+    #[serde(rename = "bookValue")]
+    book_value: f64,
 }
 
 #[derive(Deserialize, Debug)]
-struct AccessToken{
+struct AccessToken {
     access_token: String
 }
