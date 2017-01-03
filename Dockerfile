@@ -7,4 +7,6 @@ ADD ca-certificates.crt /etc/ssl/certs/
 ADD target/x86_64-unknown-linux-musl/release/debitoor-extensions /
 EXPOSE 8080
 
+ADD Rocket.toml /
+
 CMD ["/debitoor-extensions"]

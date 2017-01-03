@@ -1,4 +1,7 @@
 #![feature(proc_macro)]
+#![feature(plugin)]
+#![feature(custom_derive)]
+#![plugin(rocket_codegen)]
 
 #[macro_use]
 extern crate serde_derive;
@@ -9,16 +12,17 @@ extern crate serde_json;
 extern crate hyper;
 extern crate chrono;
 
+extern crate rocket;
+
 use std::env;
 use hyper::Client;
-use hyper::Server;
 use hyper::header::Connection;
 use std::vec::Vec;
-use hyper::client::IntoUrl;
 use std::ops::Deref;
 use chrono::UTC;
 use serde::{Deserialize, Deserializer};
 use std::str::FromStr;
+use rocket::Outcome;
 
 header! { (XToken, "x-token") => [String] }
 
@@ -88,104 +92,107 @@ struct AccessToken {
     access_token: String
 }
 
-fn main() {
-    let port = env::var("DEBITOOR_EXTENSIONS_PORT").or(Ok::<String, std::env::VarError>("8080".to_string())).unwrap().parse::<i32>().unwrap();
+impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for AccessToken {
+    type Error = ();
 
-    fn hello(server_req: hyper::server::Request, mut server_res: hyper::server::Response) {
-        let client_id = env::var("CLIENT_ID").unwrap();
-        let client_secret = env::var("CLIENT_SECRET").unwrap();
+    fn from_request(request: &'a rocket::request::Request<'r>) -> rocket::request::Outcome<Self, Self::Error> {
+        let token = request.cookies().find(DEBITOOR_TOKEN).map(|c| c.value.to_owned());
 
-        println!("Incoming request for {:?}", server_req.uri);
-        let token = server_req.headers.get::<hyper::header::Cookie>().
-            and_then(|c| c.0.iter().find(|c| c.name == DEBITOOR_TOKEN)).map(|c| c.value.to_owned());
+        println!("Header: {:?}", request.headers());
 
         match token {
             None => {
-                //No token, do we have a code?
-                match server_req.uri {
-                    hyper::uri::RequestUri::AbsolutePath(ref uri) if uri.contains("code=") => {
-                        //we have a code, get a token, set the cookie and redirect back to same page without code
-                        let url = format!("http://localhost/{}", uri).into_url().unwrap();
-                        let code = url.query_pairs().find(|q| q.0 == "code").unwrap().1;
-                        println!("got code {:?}", code);
-
-                        let client = Client::new();
-
-                        let body = format!("code={}&client_secret={}&redirect_uri=http://localhost:8080/", code, client_secret);
-
-                        println!("body {}", body);
-
-                        let res = client.
-                            post("https://app.debitoor.com/login/oauth2/access_token").
-                            //if we keep the connection open the parsing will wait for a minute in between for a timeout
-                            //don't know why this is, so just disable keep alive for now
-                            body(body.as_bytes()).
-                            header(Connection::close()).
-                            header(hyper::header::ContentType::form_url_encoded()).
-                            //the access token to authenticate with
-                            send().unwrap();
-
-                        assert_eq!(res.status, hyper::Ok);
-
-                        let access_token: AccessToken = serde_json::from_reader(res).unwrap();
-
-                        println!("{:?}", access_token);
-
-                        //set cookie and redirect
-                        server_res.headers_mut().set(hyper::header::SetCookie(vec![
-                        hyper::header::CookiePair::new(DEBITOOR_TOKEN.to_owned(), access_token.access_token.to_owned())
-                        ]));
-                        server_res.headers_mut().set(hyper::header::Location("/".to_owned()));
-                        *server_res.status_mut() = hyper::status::StatusCode::TemporaryRedirect;
-                    }
-                    _ => {
-                        //redirect to debitoor
-                        println!("not authenticated, redirecting to debitoor");
-                        server_res.headers_mut().set(hyper::header::Location(format!("https://app.debitoor.com/login/oauth2/authorize?client_id={}&response_type=code", client_id).to_owned()));
-                        *server_res.status_mut() = hyper::status::StatusCode::TemporaryRedirect;
-                    }
-                }
+                Outcome::Forward(())
             }
             Some(token) => {
-                //already have a token, proceed
-                println!("Incoming token {:?}", token);
-
-                let client = Client::new();
-
-                println!("send request for token {}", token);
-                let res = client.
-                    get("https://api.debitoor.com/api/expenses/v3").
-                    //if we keep the connection open the parsing will wait for a minute in between for a timeout
-                    //don't know why this is, so just disable keep alive for now
-                    header(Connection::close()).
-                    //the access token to authenticate with
-                    header(XToken(token.to_owned())).
-                    send().unwrap();
-                assert_eq!(res.status, hyper::Ok);
-
-                println!("create parser");
-
-                let expenses: Vec<Expense> = serde_json::from_reader(res).unwrap();
-
-                println!("printing value");
-
-                let mut asset_string = "".to_string();
-
-                for expense in expenses {
-                    for line in expense.lines.iter().filter(|line| line.category_type == Some("asset".to_string())) {
-                        println!("{:?}", line);
-                        asset_string = asset_string + &*format!("{:?}\n", line);
-                    }
-                }
-
-                println!("Sending response");
-                server_res.send(asset_string.as_bytes()).unwrap();
+                Outcome::Success(AccessToken {
+                    access_token: token
+                })
             }
         }
+    }
+}
 
-        println!("all done");
+#[derive(FromForm)]
+struct CodeWrapper<'r> {
+    code: &'r str
+}
+
+#[get("/?<code>", rank = 1)]
+fn check_code(cookies: &rocket::http::Cookies, code: CodeWrapper) -> rocket::response::Redirect {
+    let client_secret = env::var("CLIENT_SECRET").unwrap();
+
+    println!("got code {:?}", code.code);
+
+    let client = Client::new();
+
+    let body = format!("code={}&client_secret={}&redirect_uri=http://localhost:8080/", code.code, client_secret);
+
+    println!("body {}", body);
+
+    let res = client.
+        post("https://app.debitoor.com/login/oauth2/access_token").
+        //if we keep the connection open the parsing will wait for a minute in between for a timeout
+        //don't know why this is, so just disable keep alive for now
+        body(body.as_bytes()).
+        header(Connection::close()).
+        header(hyper::header::ContentType::form_url_encoded()).
+        //the access token to authenticate with
+        send().unwrap();
+
+    assert_eq!(res.status, hyper::Ok);
+
+    let access_token: AccessToken = serde_json::from_reader(res).unwrap();
+
+    println!("{:?}", access_token);
+
+    //set cookie and redirect
+    cookies.add(rocket::http::Cookie::new(DEBITOOR_TOKEN.to_owned(), access_token.access_token.to_owned()));
+    rocket::response::Redirect::temporary("/")
+}
+
+#[get("/", rank = 2)]
+fn asset_list(token: AccessToken) -> String {
+    let client = Client::new();
+
+    println!("send request for token {:?}", token);
+    let res = client.
+        get("https://api.debitoor.com/api/expenses/v3").
+        //if we keep the connection open the parsing will wait for a minute in between for a timeout
+        //don't know why this is, so just disable keep alive for now
+        header(Connection::close()).
+        //the access token to authenticate with
+        header(XToken(token.access_token.to_owned())).
+        send().unwrap();
+    assert_eq!(res.status, hyper::Ok);
+
+    println!("create parser");
+
+    let expenses: Vec<Expense> = serde_json::from_reader(res).unwrap();
+
+    println!("printing value");
+
+    let mut asset_string = "".to_string();
+
+    for expense in expenses {
+        for line in expense.lines.iter().filter(|line| line.category_type == Some("asset".to_string())) {
+            println!("{:?}", line);
+            asset_string = asset_string + &*format!("{:?}\n", line);
+        }
     }
 
-    println!("listening on {:?}", port);
-    Server::http(&*format!("0.0.0.0:{}", port)).unwrap().handle(hello).unwrap();
+    println!("Sending response");
+
+    return asset_string;
+}
+
+#[get("/", rank = 3)]
+fn redirect_auth() -> rocket::response::Redirect {
+    let client_id = env::var("CLIENT_ID").unwrap();
+
+    rocket::response::Redirect::temporary(format!("https://app.debitoor.com/login/oauth2/authorize?client_id={}&response_type=code", client_id).as_str())
+}
+
+fn main() {
+    rocket::ignite().mount("/", routes![asset_list, check_code, redirect_auth]).launch();
 }

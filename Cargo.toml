@@ -5,9 +5,10 @@ authors = ["Markus Heberling <markus@tisoft.de>"]
 publish = false
 
 [dependencies]
+rocket = "0.1"
+rocket_codegen = "0.1"
 serde = "0.8"
 serde_json = "0.8"
 serde_derive = "0.8"
 chrono = { version = "0.2", features = ["serde"] }
-
 hyper = { git = "https://github.com/tisoft/hyper", branch = "native_tls", default-features = false, features = ["serde-serialization", "native-tls"] }
