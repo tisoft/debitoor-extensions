@@ -101,7 +101,7 @@ fn main() {
                 let mut asset_string = "".to_string();
 
                 for expense in expenses {
-                    for line in expense.lines.iter().filter(|line| line.category_type == "asset") {
+                    for line in expense.lines.iter().filter(|line| line.category_type == Some("asset".to_string())) {
                         println!("{:?}", line);
                         asset_string = asset_string + &*format!("{:?}\n", line);
                     }

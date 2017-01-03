@@ -45,7 +45,7 @@ struct Expense {
 #[derive(Deserialize, Debug)]
 struct Line {
     #[serde(rename = "categoryType")]
-    category_type: String,
+    category_type: Option<String>,
     description: String,
     #[serde(rename = "assetDepreciation")]
     #[serde(default = "Vec::new")]
