@@ -2,15 +2,12 @@
 name = "debitoor-extensions"
 version = "0.1.0"
 authors = ["Markus Heberling <markus@tisoft.de>"]
-build = "build.rs"
 publish = false
-
-[build-dependencies]
-serde_codegen = "0.8"
 
 [dependencies]
 serde = "0.8"
 serde_json = "0.8"
+serde_derive = "0.8"
 chrono = { version = "0.2", features = ["serde"] }
 
 hyper = { git = "https://github.com/tisoft/hyper", branch = "native_tls", default-features = false, features = ["serde-serialization", "native-tls"] }
