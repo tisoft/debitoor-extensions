@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Anlagegüter</title>
+</head>
+<body>
+<h1>Anlagegüter</h1>
+<table>
+    <thead>
+    <tr>
+        <td>Anlage</td>
+        <td>Abschreibungsdatum</td>
+        <td>Abschreibung</td>
+        <td>Restwert</td>
+    </tr>
+    </thead>
+    {{#each this}}
+        <tr>
+            <td>{{this.description}}</td>
+            <td>{{this.depreciationDate}}</td>
+            <td>{{this.depreciationCost}}€</td>
+            <td>{{this.bookValue}}€</td>
+        </tr>
+    {{/each}}
+</table>
+</body>
+</html>

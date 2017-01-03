@@ -13,6 +13,7 @@ extern crate hyper;
 extern crate chrono;
 
 extern crate rocket;
+extern crate rocket_contrib;
 
 use std::env;
 use hyper::Client;
@@ -20,9 +21,10 @@ use hyper::header::Connection;
 use std::vec::Vec;
 use std::ops::Deref;
 use chrono::UTC;
-use serde::{Deserialize, Deserializer};
+use serde::{Serialize, Deserialize, Serializer, Deserializer};
 use std::str::FromStr;
 use rocket::Outcome;
+use chrono::Datelike;
 
 header! { (XToken, "x-token") => [String] }
 
@@ -53,6 +55,12 @@ impl Deserialize for Date {
     }
 }
 
+impl Serialize for Date {
+    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error> where S: Serializer {
+        serializer.serialize_str(format!("{}", self.0.naive_utc()).as_str())
+    }
+}
+
 // Enable `Deref` coercion.
 impl Deref for Date {
     type Target = chrono::Date<UTC>;
@@ -61,13 +69,13 @@ impl Deref for Date {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Expense {
     date: String,
     lines: Vec<Line>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Line {
     #[serde(rename = "categoryType")]
     category_type: Option<String>,
@@ -77,7 +85,7 @@ struct Line {
     asset_depreciation: Vec<AssetDepreciation>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 struct AssetDepreciation {
     #[serde(rename = "depreciationCost")]
     depreciation_cost: f64,
@@ -170,7 +178,12 @@ fn check_code(cookies: &rocket::http::Cookies, code: CodeWrapper, base_url: Base
 }
 
 #[get("/", rank = 2)]
-fn asset_list(token: AccessToken) -> String {
+fn index() -> rocket::response::Redirect {
+    rocket::response::Redirect::temporary(format!("/{}", UTC::now().year()).as_str())
+}
+
+#[get("/<year>")]
+fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
     let client = Client::new();
 
     println!("send request for token {:?}", token);
@@ -188,20 +201,40 @@ fn asset_list(token: AccessToken) -> String {
 
     let expenses: Vec<Expense> = serde_json::from_reader(res).unwrap();
 
+    #[derive(Serialize, Deserialize, Debug)]
+    struct AssetInformation {
+        description: String,
+        #[serde(rename = "depreciationCost")]
+        depreciation_cost: f64,
+        #[serde(rename = "depreciationDate")]
+        depreciation_date: Date,
+        #[serde(rename = "bookValue")]
+        book_value: f64,
+    }
+
+    let mut asset_information: Vec<AssetInformation> = Vec::new();
+
     println!("printing value");
 
-    let mut asset_string = "".to_string();
-
     for expense in expenses {
-        for line in expense.lines.iter().filter(|line| line.category_type == Some("asset".to_string())) {
-            println!("{:?}", line);
-            asset_string = asset_string + &*format!("{:?}\n", line);
+        for line in expense.lines {
+            let description = line.description.as_str();
+            for asset_depreciation in line.asset_depreciation {
+                if asset_depreciation.depreciation_date.year() == year {
+                    asset_information.push(AssetInformation {
+                        description: description.to_string(),
+                        depreciation_cost: asset_depreciation.depreciation_cost,
+                        depreciation_date: asset_depreciation.depreciation_date,
+                        book_value: asset_depreciation.book_value,
+                    });
+                }
+            }
         }
     }
 
-    println!("Sending response");
+    println!("Rendering tenplate");
 
-    return asset_string;
+    rocket_contrib::Template::render("asset_list", &asset_information)
 }
 
 #[get("/", rank = 3)]
@@ -212,5 +245,5 @@ fn redirect_auth() -> rocket::response::Redirect {
 }
 
 fn main() {
-    rocket::ignite().mount("/", routes![asset_list, check_code, redirect_auth]).launch();
+    rocket::ignite().mount("/", routes![index, asset_list, check_code, redirect_auth]).launch();
 }
