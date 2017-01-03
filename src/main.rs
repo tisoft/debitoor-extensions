@@ -98,8 +98,6 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for AccessToken {
     fn from_request(request: &'a rocket::request::Request<'r>) -> rocket::request::Outcome<Self, Self::Error> {
         let token = request.cookies().find(DEBITOOR_TOKEN).map(|c| c.value.to_owned());
 
-        println!("Header: {:?}", request.headers());
-
         match token {
             None => {
                 Outcome::Forward(())
@@ -113,20 +111,40 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for AccessToken {
     }
 }
 
+#[derive(Deserialize, Debug)]
+struct BaseURL {
+    base_url: String
+}
+
+impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for BaseURL {
+    type Error = ();
+
+    fn from_request(request: &'a rocket::request::Request<'r>) -> rocket::request::Outcome<Self, Self::Error> {
+        println!("Header: {:?}", request.headers());
+
+        let schema = request.headers().get_one("X-Forwarded-Proto").unwrap_or("http");
+        let host = request.headers().get_one("Host").unwrap();
+
+        Outcome::Success(BaseURL {
+            base_url: format!("{}://{}", schema, host)
+        })
+    }
+}
+
 #[derive(FromForm)]
 struct CodeWrapper<'r> {
     code: &'r str
 }
 
 #[get("/?<code>", rank = 1)]
-fn check_code(cookies: &rocket::http::Cookies, code: CodeWrapper) -> rocket::response::Redirect {
+fn check_code(cookies: &rocket::http::Cookies, code: CodeWrapper, base_url: BaseURL) -> rocket::response::Redirect {
     let client_secret = env::var("CLIENT_SECRET").unwrap();
 
     println!("got code {:?}", code.code);
 
     let client = Client::new();
 
-    let body = format!("code={}&client_secret={}&redirect_uri=http://localhost:8080/", code.code, client_secret);
+    let body = format!("code={}&client_secret={}&redirect_uri={}", code.code, client_secret, base_url.base_url);
 
     println!("body {}", body);
 
