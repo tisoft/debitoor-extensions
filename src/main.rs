@@ -177,9 +177,17 @@ fn check_code(cookies: &rocket::http::Cookies, code: CodeWrapper, base_url: Base
     rocket::response::Redirect::temporary("/")
 }
 
+#[allow(unused_variables)]
 #[get("/", rank = 2)]
-fn index() -> rocket::response::Redirect {
+fn index(token: AccessToken) -> rocket::response::Redirect {
     rocket::response::Redirect::temporary(format!("/{}", UTC::now().year()).as_str())
+}
+
+#[get("/", rank = 3)]
+fn redirect_auth() -> rocket::response::Redirect {
+    let client_id = env::var("CLIENT_ID").unwrap();
+
+    rocket::response::Redirect::temporary(format!("https://app.debitoor.com/login/oauth2/authorize?client_id={}&response_type=code", client_id).as_str())
 }
 
 #[get("/<year>")]
@@ -235,13 +243,6 @@ fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
     println!("Rendering tenplate");
 
     rocket_contrib::Template::render("asset_list", &asset_information)
-}
-
-#[get("/", rank = 3)]
-fn redirect_auth() -> rocket::response::Redirect {
-    let client_id = env::var("CLIENT_ID").unwrap();
-
-    rocket::response::Redirect::temporary(format!("https://app.debitoor.com/login/oauth2/authorize?client_id={}&response_type=code", client_id).as_str())
 }
 
 fn main() {
