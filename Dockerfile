@@ -8,6 +8,6 @@ ADD target/x86_64-unknown-linux-musl/release/debitoor-extensions /
 EXPOSE 8080
 
 ADD Rocket.toml /
-ADD templates /
+ADD templates /templates
 
 CMD ["/debitoor-extensions"]
