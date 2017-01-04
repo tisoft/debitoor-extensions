@@ -19,6 +19,7 @@ use std::env;
 use hyper::Client;
 use hyper::header::Connection;
 use std::vec::Vec;
+use std::collections::BTreeSet;
 use std::ops::Deref;
 use chrono::UTC;
 use serde::{Serialize, Deserialize, Serializer, Deserializer};
@@ -180,7 +181,7 @@ fn check_code(cookies: &rocket::http::Cookies, code: CodeWrapper, base_url: Base
 #[allow(unused_variables)]
 #[get("/", rank = 2)]
 fn index(token: AccessToken) -> rocket::response::Redirect {
-    rocket::response::Redirect::temporary(format!("/{}", UTC::now().year()).as_str())
+    rocket::response::Redirect::temporary(format!("/assets/{}", UTC::now().year()).as_str())
 }
 
 #[get("/", rank = 3)]
@@ -190,7 +191,7 @@ fn redirect_auth() -> rocket::response::Redirect {
     rocket::response::Redirect::temporary(format!("https://app.debitoor.com/login/oauth2/authorize?client_id={}&response_type=code", client_id).as_str())
 }
 
-#[get("/<year>")]
+#[get("/assets/<year>")]
 fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
     let client = Client::new();
 
@@ -220,7 +221,15 @@ fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
         book_value: f64,
     }
 
+    #[derive(Serialize, Deserialize, Debug)]
+    struct Context {
+        year: i32,
+        asset_information: Vec<AssetInformation>,
+        available_years: BTreeSet<i32>
+    }
+
     let mut asset_information: Vec<AssetInformation> = Vec::new();
+    let mut available_years: BTreeSet<i32> = BTreeSet::new();
 
     println!("printing value");
 
@@ -228,6 +237,7 @@ fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
         for line in expense.lines {
             let description = line.description.as_str();
             for asset_depreciation in line.asset_depreciation {
+                available_years.insert(asset_depreciation.depreciation_date.year());
                 if asset_depreciation.depreciation_date.year() == year {
                     asset_information.push(AssetInformation {
                         description: description.to_string(),
@@ -242,7 +252,11 @@ fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
 
     println!("Rendering tenplate");
 
-    rocket_contrib::Template::render("asset_list", &asset_information)
+    rocket_contrib::Template::render("asset_list", &Context{
+        year: year,
+        asset_information: asset_information,
+        available_years: available_years,
+    })
 }
 
 fn main() {

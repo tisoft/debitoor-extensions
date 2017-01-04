@@ -2,10 +2,10 @@
 <html>
 <head>
     <meta charset="utf-8"/>
-    <title>Anlagegüter</title>
+    <title>Anlagegüter {{year}}</title>
 </head>
 <body>
-<h1>Anlagegüter</h1>
+<h1>Anlagegüter {{year}}</h1>
 <table>
     <thead>
     <tr>
@@ -15,7 +15,7 @@
         <td>Restwert</td>
     </tr>
     </thead>
-    {{#each this}}
+    {{#each this.asset_information}}
         <tr>
             <td>{{this.description}}</td>
             <td>{{this.depreciationDate}}</td>
@@ -24,5 +24,9 @@
         </tr>
     {{/each}}
 </table>
+{{#each this.available_years}}
+    <a href="/assets/{{this}}">{{this}}</a>
+{{/each}}
+
 </body>
 </html>
