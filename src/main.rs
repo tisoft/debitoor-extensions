@@ -1,4 +1,3 @@
-#![feature(proc_macro)]
 #![feature(plugin)]
 #![feature(custom_derive)]
 #![plugin(rocket_codegen)]
