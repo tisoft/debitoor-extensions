@@ -15,6 +15,15 @@
         <td>Restwert</td>
     </tr>
     </thead>
+    <tfoot>
+    <tr>
+        <td></td>
+        <td></td>
+        <td>{{total_depreciation_cost}}€</td>
+        <td>{{total_book_value}}€</td>
+    </tr>
+    </tfoot>
+    <tbody>
     {{#each this.asset_information}}
         <tr>
             <td>{{this.description}}</td>
@@ -23,6 +32,7 @@
             <td>{{this.bookValue}}€</td>
         </tr>
     {{/each}}
+    <tbody>
 </table>
 {{#each this.available_years}}
     <a href="/assets/{{this}}">{{this}}</a>

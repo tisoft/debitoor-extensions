@@ -224,7 +224,9 @@ fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
     struct Context {
         year: i32,
         asset_information: Vec<AssetInformation>,
-        available_years: BTreeSet<i32>
+        available_years: BTreeSet<i32>,
+        total_depreciation_cost: f64,
+        total_book_value: f64,
     }
 
     let mut asset_information: Vec<AssetInformation> = Vec::new();
@@ -232,12 +234,17 @@ fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
 
     println!("printing value");
 
+    let mut total_depreciation_cost = 0.0f64;
+    let mut total_book_value = 0.0f64;
+
     for expense in expenses {
         for line in expense.lines {
             let description = line.description.as_str();
             for asset_depreciation in line.asset_depreciation {
                 available_years.insert(asset_depreciation.depreciation_date.year());
                 if asset_depreciation.depreciation_date.year() == year {
+                    total_depreciation_cost += asset_depreciation.depreciation_cost;
+                    total_book_value += asset_depreciation.book_value;
                     asset_information.push(AssetInformation {
                         description: description.to_string(),
                         depreciation_cost: asset_depreciation.depreciation_cost,
@@ -251,10 +258,12 @@ fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
 
     println!("Rendering tenplate");
 
-    rocket_contrib::Template::render("asset_list", &Context{
+    rocket_contrib::Template::render("asset_list", &Context {
         year: year,
         asset_information: asset_information,
         available_years: available_years,
+        total_depreciation_cost: total_depreciation_cost,
+        total_book_value: total_book_value
     })
 }
 
