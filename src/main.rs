@@ -19,55 +19,13 @@ use hyper::Client;
 use hyper::header::Connection;
 use std::vec::Vec;
 use std::collections::BTreeSet;
-use std::ops::Deref;
-use chrono::UTC;
-use serde::{Serialize, Deserialize, Serializer, Deserializer};
-use std::str::FromStr;
+use chrono::{NaiveDate as Date, UTC};
 use rocket::Outcome;
 use chrono::Datelike;
 
 header! { (XToken, "x-token") => [String] }
 
 static DEBITOOR_TOKEN: &'static str = "DEBITOOR_TOKEN";
-
-// This single-element tuple struct is called a newtype struct.
-#[derive(Debug)]
-struct Date(chrono::Date<UTC>);
-
-impl Deserialize for Date {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, D::Error>
-        where D: Deserializer
-    {
-        struct Visitor;
-
-        impl ::serde::de::Visitor for Visitor {
-            type Value = Date;
-
-            fn visit_str<E>(&mut self, value: &str) -> Result<Date, E>
-                where E: ::serde::de::Error,
-            {
-                Ok(Date(chrono::Date::from_utc(chrono::naive::date::NaiveDate::from_str(value).unwrap(), UTC)))
-            }
-        }
-
-        // Deserialize the enum from a string.
-        deserializer.deserialize_str(Visitor)
-    }
-}
-
-impl Serialize for Date {
-    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error> where S: Serializer {
-        serializer.serialize_str(format!("{}", self.0.naive_utc()).as_str())
-    }
-}
-
-// Enable `Deref` coercion.
-impl Deref for Date {
-    type Target = chrono::Date<UTC>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Expense {
