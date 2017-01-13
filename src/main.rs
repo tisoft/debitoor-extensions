@@ -9,6 +9,7 @@ extern crate serde;
 extern crate serde_json;
 #[macro_use]
 extern crate hyper;
+extern crate hyper_native_tls;
 extern crate chrono;
 
 extern crate rocket;
@@ -17,6 +18,8 @@ extern crate rocket_contrib;
 use std::env;
 use hyper::Client;
 use hyper::header::Connection;
+use hyper::net::HttpsConnector;
+use hyper_native_tls::NativeTlsClient;
 use std::vec::Vec;
 use std::collections::BTreeSet;
 use chrono::{NaiveDate as Date, UTC};
@@ -102,13 +105,19 @@ struct CodeWrapper<'r> {
     code: &'r str
 }
 
+fn create_ssl_client() -> Client {
+    let ssl = NativeTlsClient::new().unwrap();
+    let connector = HttpsConnector::new(ssl);
+    Client::with_connector(connector)
+}
+
 #[get("/?<code>", rank = 1)]
 fn check_code(cookies: &rocket::http::Cookies, code: CodeWrapper, base_url: BaseURL) -> rocket::response::Redirect {
     let client_secret = env::var("CLIENT_SECRET").unwrap();
 
     println!("got code {:?}", code.code);
 
-    let client = Client::new();
+    let client = create_ssl_client();
 
     let body = format!("code={}&client_secret={}&redirect_uri={}", code.code, client_secret, base_url.base_url);
 
@@ -150,7 +159,7 @@ fn redirect_auth() -> rocket::response::Redirect {
 
 #[get("/assets/<year>")]
 fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
-    let client = Client::new();
+    let client = create_ssl_client();
 
     println!("send request for token {:?}", token);
     let res = client.
