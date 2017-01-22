@@ -40,6 +40,8 @@ struct Expense {
 struct Line {
     #[serde(rename = "categoryType")]
     category_type: Option<String>,
+    #[serde(rename = "netAmount")]
+    net_amount: f64,
     description: String,
     #[serde(rename = "assetDepreciation")]
     #[serde(default = "Vec::new")]
@@ -179,6 +181,8 @@ fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
     #[derive(Serialize, Deserialize, Debug)]
     struct AssetInformation {
         description: String,
+        #[serde(rename = "netAmount")]
+        net_amount: f64,
         #[serde(rename = "depreciationCost")]
         depreciation_cost: f64,
         #[serde(rename = "depreciationDate")]
@@ -214,6 +218,7 @@ fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
                     total_book_value += asset_depreciation.book_value;
                     asset_information.push(AssetInformation {
                         description: description.to_string(),
+                        net_amount: line.net_amount,
                         depreciation_cost: asset_depreciation.depreciation_cost,
                         depreciation_date: asset_depreciation.depreciation_date,
                         book_value: asset_depreciation.book_value,
