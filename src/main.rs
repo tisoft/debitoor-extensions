@@ -67,7 +67,7 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for AccessToken {
     type Error = ();
 
     fn from_request(request: &'a rocket::request::Request<'r>) -> rocket::request::Outcome<Self, Self::Error> {
-        let token = request.cookies().find(DEBITOOR_TOKEN).map(|c| c.value.to_owned());
+        let token = request.cookies().find(DEBITOOR_TOKEN).map(|c| c.value().to_owned());
 
         match token {
             None => {
