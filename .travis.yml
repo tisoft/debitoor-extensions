@@ -11,7 +11,7 @@ services:
 script:
   - cargo build --verbose
   - cargo test --verbose
-  - docker run --rm -it -v "$HOME/.cargo/registry":/home/rust/.cargo/registry -v "$(pwd)":/home/rust/src ekidd/rust-musl-builder:nightly /bin/bash -c "rustup update; cargo build --verbose --release"
+  - docker run --rm -it -v "$HOME/.rustup":/home/rust/.rustup -v "$HOME/.cargo/registry":/home/rust/.cargo/registry -v "$(pwd)":/home/rust/src ekidd/rust-musl-builder:nightly /bin/bash -c "rustup target add x86_64-unknown-linux-musl && rustup update && cargo build --verbose --release"
 
 after_success:
   - docker build --pull -t docker.io/tisoft/debitoor-extensions:latest .
