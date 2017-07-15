@@ -22,7 +22,7 @@ use hyper::net::HttpsConnector;
 use hyper_native_tls::NativeTlsClient;
 use std::vec::Vec;
 use std::collections::BTreeSet;
-use chrono::{NaiveDate as Date, UTC};
+use chrono::{NaiveDate as Date, Utc};
 use rocket::Outcome;
 use chrono::Datelike;
 
@@ -67,7 +67,7 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for AccessToken {
     type Error = ();
 
     fn from_request(request: &'a rocket::request::Request<'r>) -> rocket::request::Outcome<Self, Self::Error> {
-        let token = request.cookies().find(DEBITOOR_TOKEN).map(|c| c.value().to_owned());
+        let token = request.cookies().get(DEBITOOR_TOKEN).map(|c| c.value().to_owned());
 
         match token {
             None => {
@@ -103,8 +103,8 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for BaseURL {
 }
 
 #[derive(FromForm)]
-struct CodeWrapper<'r> {
-    code: &'r str
+struct CodeWrapper {
+    code: String
 }
 
 fn create_ssl_client() -> Client {
@@ -114,7 +114,7 @@ fn create_ssl_client() -> Client {
 }
 
 #[get("/?<code>", rank = 1)]
-fn check_code(cookies: &rocket::http::Cookies, code: CodeWrapper, base_url: BaseURL) -> rocket::response::Redirect {
+fn check_code(mut cookies: rocket::http::Cookies, code: CodeWrapper, base_url: BaseURL) -> rocket::response::Redirect {
     let client_secret = env::var("CLIENT_SECRET").unwrap();
 
     println!("got code {:?}", code.code);
@@ -149,7 +149,7 @@ fn check_code(cookies: &rocket::http::Cookies, code: CodeWrapper, base_url: Base
 #[allow(unused_variables)]
 #[get("/", rank = 2)]
 fn index(token: AccessToken) -> rocket::response::Redirect {
-    rocket::response::Redirect::temporary(format!("/assets/{}", UTC::now().year()).as_str())
+    rocket::response::Redirect::temporary(format!("/assets/{}", Utc::now().year()).as_str())
 }
 
 #[get("/", rank = 3)]
@@ -230,7 +230,7 @@ fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
 
     println!("Rendering tenplate");
 
-    rocket_contrib::Template::render("asset_list", &Context {
+    rocket_contrib::Template::render("asset_list", Context {
         year: year,
         asset_information: asset_information,
         available_years: available_years,

@@ -1,17 +1,16 @@
 [package]
 name = "debitoor-extensions"
-version = "0.2.2"
+version = "0.3.0"
 authors = ["Markus Heberling <markus@tisoft.de>"]
 publish = false
 
 [dependencies]
-rocket = "0.2"
-rocket_codegen = "0.2"
-rocket_contrib = { version = "0.2", features = [ "handlebars_templates"] }
-serde = "0.9"
-serde_json = "0.9"
-serde_derive = "0.9"
-#we need to fix chrono to axactly 0.3.0 for now, since 0.3.1 needs serde 1.0 and rocket handlebars is not yet updated to that
-chrono = { version = "= 0.3.0", features = ["serde"] }
+rocket = "0.3"
+rocket_codegen = "0.3"
+rocket_contrib = { version = "0.3", features = [ "handlebars_templates"] }
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
 hyper = "0.10"
 hyper-native-tls = "0.2"
