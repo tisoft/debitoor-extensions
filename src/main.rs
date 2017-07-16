@@ -25,6 +25,7 @@ use std::collections::BTreeSet;
 use chrono::{NaiveDate as Date, Utc};
 use rocket::Outcome;
 use chrono::Datelike;
+use rocket_contrib::Template;
 
 header! { (XToken, "x-token") => [String] }
 
@@ -160,7 +161,7 @@ fn redirect_auth() -> rocket::response::Redirect {
 }
 
 #[get("/assets/<year>")]
-fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
+fn asset_list(token: AccessToken, year: i32) -> Template {
     let client = create_ssl_client();
 
     println!("send request for token {:?}", token);
@@ -230,7 +231,7 @@ fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
 
     println!("Rendering tenplate");
 
-    rocket_contrib::Template::render("asset_list", Context {
+    Template::render("asset_list", Context {
         year: year,
         asset_information: asset_information,
         available_years: available_years,
@@ -240,5 +241,5 @@ fn asset_list(token: AccessToken, year: i32) -> rocket_contrib::Template {
 }
 
 fn main() {
-    rocket::ignite().mount("/", routes![index, asset_list, check_code, redirect_auth]).launch();
+    rocket::ignite().attach(Template::fairing()).mount("/", routes![index, asset_list, check_code, redirect_auth]).launch();
 }
