@@ -166,7 +166,7 @@ fn asset_list(token: AccessToken, year: i32) -> Template {
 
     println!("send request for token {:?}", token);
     let res = client.
-        get("https://api.debitoor.com/api/expenses/v3").
+        get("https://api.debitoor.com/api/expenses/v4").
         //if we keep the connection open the parsing will wait for a minute in between for a timeout
         //don't know why this is, so just disable keep alive for now
         header(Connection::close()).
