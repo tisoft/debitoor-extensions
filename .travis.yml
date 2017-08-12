@@ -1,20 +1,9 @@
 language: rust
 cache: cargo
-sudo: required
 
 rust:
   - nightly
 
-services:
-  - docker
-
 script:
   - cargo build --verbose
   - cargo test --verbose
-  - chmod -R a+rw $HOME/.rustup $HOME/.cargo/registry "$(pwd)"
-  - docker run --rm -it -v "$HOME/.rustup":/home/rust/.rustup -v "$HOME/.cargo/registry":/home/rust/.cargo/registry -v "$(pwd)":/home/rust/src ekidd/rust-musl-builder:nightly /bin/bash -c "ls -al ~/.rustup && rustup target add x86_64-unknown-linux-musl && rustup update && cargo build --verbose --release"
-
-after_success:
-  - docker build --pull -t docker.io/tisoft/debitoor-extensions:latest .
-  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-  - docker push docker.io/tisoft/debitoor-extensions:latest

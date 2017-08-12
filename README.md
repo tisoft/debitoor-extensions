@@ -19,3 +19,7 @@ You can now run the following in a shell:
     CLIENT_ID='the client id from debitoor' CLIENT_SECRET='the client secret from debitoor' cargo run
 
 You can open your browser now to http://localhost:8080 which will redirect you to debitoor for authentication.
+
+## Build Status
+
+[![Build Status](https://travis-ci.org/tisoft/debitoor-extensions.svg?branch=master)](https://travis-ci.org/tisoft/debitoor-extensions)
