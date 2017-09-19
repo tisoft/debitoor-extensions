@@ -5,7 +5,6 @@
 #[macro_use]
 extern crate serde_derive;
 
-extern crate serde;
 extern crate serde_json;
 #[macro_use]
 extern crate hyper;
@@ -61,51 +60,51 @@ struct AssetDepreciation {
 
 #[derive(Deserialize, Debug)]
 struct AccessToken {
-    access_token: String
+    access_token: String,
 }
 
 impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for AccessToken {
     type Error = ();
 
-    fn from_request(request: &'a rocket::request::Request<'r>) -> rocket::request::Outcome<Self, Self::Error> {
-        let token = request.cookies().get(DEBITOOR_TOKEN).map(|c| c.value().to_owned());
+    fn from_request(
+        request: &'a rocket::request::Request<'r>,
+    ) -> rocket::request::Outcome<Self, Self::Error> {
+        let token = request.cookies().get(DEBITOOR_TOKEN).map(|c| {
+            c.value().to_owned()
+        });
 
         match token {
-            None => {
-                Outcome::Forward(())
-            }
-            Some(token) => {
-                Outcome::Success(AccessToken {
-                    access_token: token
-                })
-            }
+            None => Outcome::Forward(()),
+            Some(token) => Outcome::Success(AccessToken { access_token: token }),
         }
     }
 }
 
 #[derive(Deserialize, Debug)]
 struct BaseURL {
-    base_url: String
+    base_url: String,
 }
 
 impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for BaseURL {
     type Error = ();
 
-    fn from_request(request: &'a rocket::request::Request<'r>) -> rocket::request::Outcome<Self, Self::Error> {
+    fn from_request(
+        request: &'a rocket::request::Request<'r>,
+    ) -> rocket::request::Outcome<Self, Self::Error> {
         println!("Header: {:?}", request.headers());
 
-        let schema = request.headers().get_one("X-Forwarded-Proto").unwrap_or("http");
+        let schema = request.headers().get_one("X-Forwarded-Proto").unwrap_or(
+            "http",
+        );
         let host = request.headers().get_one("Host").unwrap();
 
-        Outcome::Success(BaseURL {
-            base_url: format!("{}://{}", schema, host)
-        })
+        Outcome::Success(BaseURL { base_url: format!("{}://{}", schema, host) })
     }
 }
 
 #[derive(FromForm)]
 struct CodeWrapper {
-    code: String
+    code: String,
 }
 
 fn create_ssl_client() -> Client {
@@ -115,14 +114,23 @@ fn create_ssl_client() -> Client {
 }
 
 #[get("/?<code>", rank = 1)]
-fn check_code(mut cookies: rocket::http::Cookies, code: CodeWrapper, base_url: BaseURL) -> rocket::response::Redirect {
+fn check_code(
+    mut cookies: rocket::http::Cookies,
+    code: CodeWrapper,
+    base_url: BaseURL,
+) -> rocket::response::Redirect {
     let client_secret = env::var("CLIENT_SECRET").unwrap();
 
     println!("got code {:?}", code.code);
 
     let client = create_ssl_client();
 
-    let body = format!("code={}&client_secret={}&redirect_uri={}", code.code, client_secret, base_url.base_url);
+    let body = format!(
+        "code={}&client_secret={}&redirect_uri={}",
+        code.code,
+        client_secret,
+        base_url.base_url
+    );
 
     println!("body {}", body);
 
@@ -143,7 +151,10 @@ fn check_code(mut cookies: rocket::http::Cookies, code: CodeWrapper, base_url: B
     println!("{:?}", access_token);
 
     //set cookie and redirect
-    cookies.add(rocket::http::Cookie::new(DEBITOOR_TOKEN.to_owned(), access_token.access_token.to_owned()));
+    cookies.add(rocket::http::Cookie::new(
+        DEBITOOR_TOKEN.to_owned(),
+        access_token.access_token.to_owned(),
+    ));
     rocket::response::Redirect::temporary("/")
 }
 
@@ -157,7 +168,12 @@ fn index(token: AccessToken) -> rocket::response::Redirect {
 fn redirect_auth() -> rocket::response::Redirect {
     let client_id = env::var("CLIENT_ID").unwrap();
 
-    rocket::response::Redirect::temporary(format!("https://app.debitoor.com/login/oauth2/authorize?client_id={}&response_type=code", client_id).as_str())
+    rocket::response::Redirect::temporary(
+        format!(
+            "https://app.debitoor.com/login/oauth2/authorize?client_id={}&response_type=code",
+            client_id
+        ).as_str(),
+    )
 }
 
 #[get("/assets/<year>")]
@@ -231,15 +247,21 @@ fn asset_list(token: AccessToken, year: i32) -> Template {
 
     println!("Rendering tenplate");
 
-    Template::render("asset_list", Context {
-        year: year,
-        asset_information: asset_information,
-        available_years: available_years,
-        total_depreciation_cost: total_depreciation_cost,
-        total_book_value: total_book_value
-    })
+    Template::render(
+        "asset_list",
+        Context {
+            year: year,
+            asset_information: asset_information,
+            available_years: available_years,
+            total_depreciation_cost: total_depreciation_cost,
+            total_book_value: total_book_value,
+        },
+    )
 }
 
 fn main() {
-    rocket::ignite().attach(Template::fairing()).mount("/", routes![index, asset_list, check_code, redirect_auth]).launch();
+    rocket::ignite()
+        .attach(Template::fairing())
+        .mount("/", routes![index, asset_list, check_code, redirect_auth])
+        .launch();
 }
