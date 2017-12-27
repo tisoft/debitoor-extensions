@@ -5,11 +5,11 @@
 #[macro_use]
 extern crate serde_derive;
 
-extern crate serde_json;
+extern crate chrono;
 #[macro_use]
 extern crate hyper;
 extern crate hyper_native_tls;
-extern crate chrono;
+extern crate serde_json;
 
 extern crate rocket;
 extern crate rocket_contrib;
@@ -38,10 +38,8 @@ struct Expense {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Line {
-    #[serde(rename = "categoryType")]
-    category_type: Option<String>,
-    #[serde(rename = "netAmount")]
-    net_amount: f64,
+    #[serde(rename = "categoryType")] category_type: Option<String>,
+    #[serde(rename = "netAmount")] net_amount: f64,
     description: String,
     #[serde(rename = "assetDepreciation")]
     #[serde(default = "Vec::new")]
@@ -50,12 +48,9 @@ struct Line {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct AssetDepreciation {
-    #[serde(rename = "depreciationCost")]
-    depreciation_cost: f64,
-    #[serde(rename = "depreciationDate")]
-    depreciation_date: Date,
-    #[serde(rename = "bookValue")]
-    book_value: f64,
+    #[serde(rename = "depreciationCost")] depreciation_cost: f64,
+    #[serde(rename = "depreciationDate")] depreciation_date: Date,
+    #[serde(rename = "bookValue")] book_value: f64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -69,13 +64,16 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for AccessToken {
     fn from_request(
         request: &'a rocket::request::Request<'r>,
     ) -> rocket::request::Outcome<Self, Self::Error> {
-        let token = request.cookies().get(DEBITOOR_TOKEN).map(|c| {
-            c.value().to_owned()
-        });
+        let token = request
+            .cookies()
+            .get(DEBITOOR_TOKEN)
+            .map(|c| c.value().to_owned());
 
         match token {
             None => Outcome::Forward(()),
-            Some(token) => Outcome::Success(AccessToken { access_token: token }),
+            Some(token) => Outcome::Success(AccessToken {
+                access_token: token,
+            }),
         }
     }
 }
@@ -93,12 +91,15 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for BaseURL {
     ) -> rocket::request::Outcome<Self, Self::Error> {
         println!("Header: {:?}", request.headers());
 
-        let schema = request.headers().get_one("X-Forwarded-Proto").unwrap_or(
-            "http",
-        );
+        let schema = request
+            .headers()
+            .get_one("X-Forwarded-Proto")
+            .unwrap_or("http");
         let host = request.headers().get_one("Host").unwrap();
 
-        Outcome::Success(BaseURL { base_url: format!("{}://{}", schema, host) })
+        Outcome::Success(BaseURL {
+            base_url: format!("{}://{}", schema, host),
+        })
     }
 }
 
@@ -127,9 +128,7 @@ fn check_code(
 
     let body = format!(
         "code={}&client_secret={}&redirect_uri={}",
-        code.code,
-        client_secret,
-        base_url.base_url
+        code.code, client_secret, base_url.base_url
     );
 
     println!("body {}", body);
@@ -198,14 +197,10 @@ fn asset_list(token: AccessToken, year: i32) -> Template {
     #[derive(Serialize, Deserialize, Debug)]
     struct AssetInformation {
         description: String,
-        #[serde(rename = "netAmount")]
-        net_amount: f64,
-        #[serde(rename = "depreciationCost")]
-        depreciation_cost: f64,
-        #[serde(rename = "depreciationDate")]
-        depreciation_date: Date,
-        #[serde(rename = "bookValue")]
-        book_value: f64,
+        #[serde(rename = "netAmount")] net_amount: f64,
+        #[serde(rename = "depreciationCost")] depreciation_cost: f64,
+        #[serde(rename = "depreciationDate")] depreciation_date: Date,
+        #[serde(rename = "bookValue")] book_value: f64,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
