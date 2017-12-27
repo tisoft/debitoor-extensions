@@ -10,9 +10,11 @@ Callback URL must be http://localhost:8080 all other fileds can be chosen freely
 Install rust https://www.rust-lang.org/en-US/install.html
 
 
-Check out this project and set it to use the rust nighlty compiler.
+Check out this project and set it to use the rust nightly compiler.
 
-    rustup override set nightly
+    rustup override set nightly-2017-12-20
+
+**Due to issue SergioBenitez/Rocket#513 you currently need to use the specific rust nightly version from the command above.**
 
 You can now run the following in a shell:
 
