@@ -30,6 +30,10 @@ header! { (XToken, "x-token") => [String] }
 
 static DEBITOOR_TOKEN: &'static str = "DEBITOOR_TOKEN";
 
+fn default_description() -> String {
+    "<empty>".to_string()
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct Expense {
     date: String,
@@ -40,7 +44,7 @@ struct Expense {
 struct Line {
     #[serde(rename = "categoryType")] category_type: Option<String>,
     #[serde(rename = "netAmount")] net_amount: f64,
-    description: String,
+    #[serde(default = "default_description")] description: String,
     #[serde(rename = "assetDepreciation")]
     #[serde(default = "Vec::new")]
     asset_depreciation: Vec<AssetDepreciation>,
