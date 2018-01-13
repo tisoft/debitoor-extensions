@@ -6,7 +6,7 @@ COPY src/* /home/rust/src/src/
 COPY Cargo.* /home/rust/src/
 
 WORKDIR /home/rust/src
-RUN rustup toolchain install nightly-2017-12-20 && rustup override set nightly-2017-12-20 && rustup target add x86_64-unknown-linux-musl && cargo build --verbose --release
+RUN rustup toolchain install nightly && rustup override set nightly && rustup target add x86_64-unknown-linux-musl && cargo build --verbose --release
 
 FROM scratch
 

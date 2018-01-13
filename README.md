@@ -12,15 +12,17 @@ Install rust https://www.rust-lang.org/en-US/install.html
 
 Check out this project and set it to use the rust nightly compiler.
 
-    rustup override set nightly-2017-12-20
-
-**Due to issue SergioBenitez/Rocket#513 you currently need to use the specific rust nightly version from the command above.**
+    rustup override set nightly
 
 You can now run the following in a shell:
 
     CLIENT_ID='the client id from debitoor' CLIENT_SECRET='the client secret from debitoor' cargo run
 
 You can open your browser now to http://localhost:8080 which will redirect you to debitoor for authentication.
+
+If the build failes, make sure you have the latest rust nightly toolchain installed:
+
+    rustup update
 
 ## Build Status
 
