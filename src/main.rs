@@ -42,9 +42,12 @@ struct Expense {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Line {
-    #[serde(rename = "categoryType")] category_type: Option<String>,
-    #[serde(rename = "netAmount")] net_amount: f64,
-    #[serde(default = "default_description")] description: String,
+    #[serde(rename = "categoryType")]
+    category_type: Option<String>,
+    #[serde(rename = "netAmount")]
+    net_amount: f64,
+    #[serde(default = "default_description")]
+    description: String,
     #[serde(rename = "assetDepreciation")]
     #[serde(default = "Vec::new")]
     asset_depreciation: Vec<AssetDepreciation>,
@@ -52,9 +55,12 @@ struct Line {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct AssetDepreciation {
-    #[serde(rename = "depreciationCost")] depreciation_cost: f64,
-    #[serde(rename = "depreciationDate")] depreciation_date: Date,
-    #[serde(rename = "bookValue")] book_value: f64,
+    #[serde(rename = "depreciationCost")]
+    depreciation_cost: f64,
+    #[serde(rename = "depreciationDate")]
+    depreciation_date: Date,
+    #[serde(rename = "bookValue")]
+    book_value: f64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -201,10 +207,16 @@ fn asset_list(token: AccessToken, year: i32) -> Template {
     #[derive(Serialize, Deserialize, Debug)]
     struct AssetInformation {
         description: String,
-        #[serde(rename = "netAmount")] net_amount: f64,
-        #[serde(rename = "depreciationCost")] depreciation_cost: f64,
-        #[serde(rename = "depreciationDate")] depreciation_date: Date,
-        #[serde(rename = "bookValue")] book_value: f64,
+        #[serde(rename = "netAmount")]
+        net_amount: f64,
+        #[serde(rename = "purchasingDate")]
+        purchasing_date: Date,
+        #[serde(rename = "depreciationCost")]
+        depreciation_cost: f64,
+        #[serde(rename = "depreciationDate")]
+        depreciation_date: Date,
+        #[serde(rename = "bookValue")]
+        book_value: f64,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -227,7 +239,27 @@ fn asset_list(token: AccessToken, year: i32) -> Template {
     for expense in expenses {
         for line in expense.lines {
             let description = line.description.as_str();
-            for asset_depreciation in line.asset_depreciation {
+
+            let asset_deprecations = &line.asset_depreciation;
+
+            if asset_deprecations.is_empty() {
+                continue;
+            }
+
+            //find the first depreciation data, which is the poruchase date
+            let purchase_info = asset_deprecations
+                .iter()
+                .fold(None, |min, x| match min {
+                    None => Some(x),
+                    Some(y) => Some(if x.depreciation_date < y.depreciation_date {
+                        x
+                    } else {
+                        y
+                    }),
+                })
+                .unwrap();
+
+            for asset_depreciation in asset_deprecations {
                 available_years.insert(asset_depreciation.depreciation_date.year());
                 if asset_depreciation.depreciation_date.year() == year {
                     total_depreciation_cost += asset_depreciation.depreciation_cost;
@@ -235,6 +267,7 @@ fn asset_list(token: AccessToken, year: i32) -> Template {
                     asset_information.push(AssetInformation {
                         description: description.to_string(),
                         net_amount: line.net_amount,
+                        purchasing_date: purchase_info.depreciation_date,
                         depreciation_cost: asset_depreciation.depreciation_cost,
                         depreciation_date: asset_depreciation.depreciation_date,
                         book_value: asset_depreciation.book_value,
