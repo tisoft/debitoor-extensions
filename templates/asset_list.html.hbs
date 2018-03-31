@@ -13,12 +13,14 @@
         <td>Abschreibungsdatum</td>
         <td>Anschaffungsdatum</td>
         <td>Anschaffungskosten</td>
+        <td>Buchwert Begin</td>
         <td>Abschreibung</td>
-        <td>Restwert</td>
+        <td>Buchwert Ende</td>
     </tr>
     </thead>
     <tfoot>
     <tr>
+        <td></td>
         <td></td>
         <td></td>
         <td></td>
@@ -34,8 +36,9 @@
             <td>{{this.depreciationDate}}</td>
             <td>{{this.purchasingDate}}</td>
             <td>{{this.netAmount}}€</td>
+            <td>{{this.bookValuePeriodBegin}}€</td>
             <td>{{this.depreciationCost}}€</td>
-            <td>{{this.bookValue}}€</td>
+            <td>{{this.bookValuePeriodEnd}}€</td>
         </tr>
     {{/each}}
     <tbody>

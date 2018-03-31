@@ -215,8 +215,10 @@ fn asset_list(token: AccessToken, year: i32) -> Template {
         depreciation_cost: f64,
         #[serde(rename = "depreciationDate")]
         depreciation_date: Date,
-        #[serde(rename = "bookValue")]
-        book_value: f64,
+        #[serde(rename = "bookValuePeriodBegin")]
+        book_value_period_begin: f64,
+        #[serde(rename = "bookValuePeriodEnd")]
+        book_value_period_end: f64,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -270,7 +272,9 @@ fn asset_list(token: AccessToken, year: i32) -> Template {
                         purchasing_date: purchase_info.depreciation_date,
                         depreciation_cost: asset_depreciation.depreciation_cost,
                         depreciation_date: asset_depreciation.depreciation_date,
-                        book_value: asset_depreciation.book_value,
+                        book_value_period_begin: asset_depreciation.book_value
+                            + asset_depreciation.depreciation_cost,
+                        book_value_period_end: asset_depreciation.book_value,
                     });
                 }
             }
