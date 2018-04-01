@@ -248,7 +248,7 @@ fn asset_list(token: AccessToken, year: i32) -> Template {
                 continue;
             }
 
-            //find the first depreciation data, which is the poruchase date
+            //find the first depreciation data, which is the purchase date
             let purchase_info = asset_deprecations
                 .iter()
                 .fold(None, |min, x| match min {
@@ -281,16 +281,16 @@ fn asset_list(token: AccessToken, year: i32) -> Template {
         }
     }
 
-    println!("Rendering tenplate");
+    println!("Rendering template");
 
     Template::render(
         "asset_list",
         Context {
-            year: year,
-            asset_information: asset_information,
-            available_years: available_years,
-            total_depreciation_cost: total_depreciation_cost,
-            total_book_value: total_book_value,
+            year,
+            asset_information,
+            available_years,
+            total_depreciation_cost,
+            total_book_value,
         },
     )
 }
