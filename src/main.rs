@@ -164,7 +164,7 @@ fn check_code(
 #[allow(unused_variables)]
 #[get("/", rank = 2)]
 fn index(token: AccessToken) -> rocket::response::Redirect {
-    rocket::response::Redirect::temporary(format!("/assets/{}", Utc::now().year()))
+    rocket::response::Redirect::temporary(uri!(asset_list: year=Utc::now().year()))
 }
 
 #[get("/", rank = 3)]
