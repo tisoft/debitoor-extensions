@@ -1,6 +1,4 @@
-#![feature(plugin)]
-#![feature(custom_derive)]
-#![plugin(rocket_codegen)]
+#![feature(proc_macro_hygiene, decl_macro)]
 
 #[macro_use]
 extern crate serde_derive;
@@ -11,6 +9,7 @@ extern crate hyper;
 extern crate hyper_native_tls;
 extern crate serde_json;
 
+#[macro_use]
 extern crate rocket;
 extern crate rocket_contrib;
 
@@ -24,7 +23,7 @@ use std::collections::BTreeSet;
 use chrono::{NaiveDate as Date, Utc};
 use rocket::Outcome;
 use chrono::Datelike;
-use rocket_contrib::Template;
+use rocket_contrib::templates::Template;
 
 header! { (XToken, "x-token") => [String] }
 
@@ -113,11 +112,6 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for BaseURL {
     }
 }
 
-#[derive(FromForm)]
-struct CodeWrapper {
-    code: String,
-}
-
 fn create_ssl_client() -> Client {
     let ssl = NativeTlsClient::new().unwrap();
     let connector = HttpsConnector::new(ssl);
@@ -127,18 +121,18 @@ fn create_ssl_client() -> Client {
 #[get("/?<code>", rank = 1)]
 fn check_code(
     mut cookies: rocket::http::Cookies,
-    code: CodeWrapper,
+    code: String,
     base_url: BaseURL,
 ) -> rocket::response::Redirect {
     let client_secret = env::var("CLIENT_SECRET").unwrap();
 
-    println!("got code {:?}", code.code);
+    println!("got code {:?}", code);
 
     let client = create_ssl_client();
 
     let body = format!(
         "code={}&client_secret={}&redirect_uri={}",
-        code.code, client_secret, base_url.base_url
+        code, client_secret, base_url.base_url
     );
 
     println!("body {}", body);
@@ -170,7 +164,7 @@ fn check_code(
 #[allow(unused_variables)]
 #[get("/", rank = 2)]
 fn index(token: AccessToken) -> rocket::response::Redirect {
-    rocket::response::Redirect::temporary(format!("/assets/{}", Utc::now().year()).as_str())
+    rocket::response::Redirect::temporary(format!("/assets/{}", Utc::now().year()))
 }
 
 #[get("/", rank = 3)]
@@ -181,7 +175,7 @@ fn redirect_auth() -> rocket::response::Redirect {
         format!(
             "https://app.debitoor.com/login/oauth2/authorize?client_id={}&response_type=code",
             client_id
-        ).as_str(),
+        ),
     )
 }
 
