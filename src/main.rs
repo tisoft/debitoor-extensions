@@ -4,28 +4,20 @@
 extern crate serde_derive;
 
 extern crate chrono;
-#[macro_use]
-extern crate hyper;
-extern crate hyper_native_tls;
+extern crate ureq;
 extern crate serde_json;
 
 #[macro_use]
 extern crate rocket;
 extern crate rocket_contrib;
 
-use std::env;
-use hyper::Client;
-use hyper::header::Connection;
-use hyper::net::HttpsConnector;
-use hyper_native_tls::NativeTlsClient;
-use std::vec::Vec;
-use std::collections::BTreeSet;
+use chrono::Datelike;
 use chrono::{NaiveDate as Date, Utc};
 use rocket::Outcome;
-use chrono::Datelike;
 use rocket_contrib::templates::Template;
-
-header! { (XToken, "x-token") => [String] }
+use std::collections::BTreeSet;
+use std::env;
+use std::vec::Vec;
 
 static DEBITOOR_TOKEN: &'static str = "DEBITOOR_TOKEN";
 
@@ -112,12 +104,6 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for BaseURL {
     }
 }
 
-fn create_ssl_client() -> Client {
-    let ssl = NativeTlsClient::new().unwrap();
-    let connector = HttpsConnector::new(ssl);
-    Client::with_connector(connector)
-}
-
 #[get("/?<code>", rank = 1)]
 fn check_code(
     mut cookies: rocket::http::Cookies,
@@ -128,8 +114,6 @@ fn check_code(
 
     println!("got code {:?}", code);
 
-    let client = create_ssl_client();
-
     let body = format!(
         "code={}&client_secret={}&redirect_uri={}",
         code, client_secret, base_url.base_url
@@ -137,19 +121,16 @@ fn check_code(
 
     println!("body {}", body);
 
-    let res = client.
-        post("https://app.debitoor.com/login/oauth2/access_token").
+    let res = ureq::post("https://app.debitoor.com/login/oauth2/access_token").
         //if we keep the connection open the parsing will wait for a minute in between for a timeout
         //don't know why this is, so just disable keep alive for now
-        body(body.as_bytes()).
-        header(Connection::close()).
-        header(hyper::header::ContentType::form_url_encoded()).
-        //the access token to authenticate with
-        send().unwrap();
+        set("Connection", "close").
+        set("Content-Type", "application/x-www-form-urlencoded").
+        send_string(&body);
 
-    assert_eq!(res.status, hyper::Ok);
+    assert_eq!(res.ok(), true);
 
-    let access_token: AccessToken = serde_json::from_reader(res).unwrap();
+    let access_token: AccessToken = serde_json::from_reader(res.into_reader()).unwrap();
 
     println!("{:?}", access_token);
 
@@ -164,39 +145,34 @@ fn check_code(
 #[allow(unused_variables)]
 #[get("/", rank = 2)]
 fn index(token: AccessToken) -> rocket::response::Redirect {
-    rocket::response::Redirect::temporary(uri!(asset_list: year=Utc::now().year()))
+    rocket::response::Redirect::temporary(uri!(asset_list: year = Utc::now().year()))
 }
 
 #[get("/", rank = 3)]
 fn redirect_auth() -> rocket::response::Redirect {
     let client_id = env::var("CLIENT_ID").unwrap();
 
-    rocket::response::Redirect::temporary(
-        format!(
-            "https://app.debitoor.com/login/oauth2/authorize?client_id={}&response_type=code",
-            client_id
-        ),
-    )
+    rocket::response::Redirect::temporary(format!(
+        "https://app.debitoor.com/login/oauth2/authorize?client_id={}&response_type=code",
+        client_id
+    ))
 }
 
 #[get("/assets/<year>")]
 fn asset_list(token: AccessToken, year: i32) -> Template {
-    let client = create_ssl_client();
-
     println!("send request for token {:?}", token);
-    let res = client.
-        get("https://api.debitoor.com/api/expenses/v4").
+    let res = ureq::get("https://api.debitoor.com/api/expenses/v4").
         //if we keep the connection open the parsing will wait for a minute in between for a timeout
         //don't know why this is, so just disable keep alive for now
-        header(Connection::close()).
+        set("Connection", "close").
         //the access token to authenticate with
-        header(XToken(token.access_token.to_owned())).
-        send().unwrap();
-    assert_eq!(res.status, hyper::Ok);
+        set("x-token", &token.access_token).
+        call();
+    assert_eq!(res.ok(), true);
 
     println!("create parser");
 
-    let expenses: Vec<Expense> = serde_json::from_reader(res).unwrap();
+    let expenses: Vec<Expense> = serde_json::from_reader(res.into_reader()).unwrap();
 
     #[derive(Serialize, Deserialize, Debug)]
     struct AssetInformation {
