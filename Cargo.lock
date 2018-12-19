@@ -151,7 +151,7 @@ dependencies = [
  "serde 1.0.82 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.82 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.33 (registry+https://github.com/rust-lang/crates.io-index)",
- "ureq 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ureq 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1198,7 +1198,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "ureq"
-version = "0.6.5"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "ascii 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1448,7 +1448,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "fc72304796d0818e357ead4e000d19c9c174ab23dc11093ac919054d20a6a7fc"
 "checksum unreachable 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "382810877fe448991dfc7f0dd6e3ae5d58088fd0ea5e35189655f84e6814fa56"
 "checksum untrusted 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "55cd1f4b4e96b46aeb8d4855db4a7a9bd96eeeb5c6a1ab54593328761642ce2f"
-"checksum ureq 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)" = "ed08da210f1f080d3ef1e5c7e4dfcca3e9e3b4b03e609ed34aae4de2ed9fe763"
+"checksum ureq 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0fc919b0930ec97d645006b0e0e282e16159ff2802f312e6a74937876972845b"
 "checksum url 1.7.2 (registry+https://github.com/rust-lang/crates.io-index)" = "dd4e7c0d531266369519a4aa4f399d748bd37043b00bde1e4ff1f60a120b355a"
 "checksum utf8-ranges 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "796f7e48bef87609f7ade7e06495a87d5cd06c7866e6a5cbfceffc558a243737"
 "checksum vcpkg 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "def296d3eb3b12371b2c7d0e83bfe1403e4db2d7a0bba324a12b21c4ee13143d"
