@@ -2,8 +2,8 @@ FROM ekidd/rust-musl-builder:nightly as builder
 
 VOLUME /home/rust/.rustup
 
-COPY src/* /home/rust/src/src/
-COPY Cargo.* /home/rust/src/
+COPY --chown=rust:rust src/* /home/rust/src/src/
+COPY --chown=rust:rust Cargo.* /home/rust/src/
 
 WORKDIR /home/rust/src
 RUN rustup toolchain install nightly && rustup override set nightly && rustup target add x86_64-unknown-linux-musl && cargo build --verbose --release
