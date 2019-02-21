@@ -122,9 +122,6 @@ fn check_code(
     println!("body {}", body);
 
     let res = ureq::post("https://app.debitoor.com/login/oauth2/access_token").
-        //if we keep the connection open the parsing will wait for a minute in between for a timeout
-        //don't know why this is, so just disable keep alive for now
-        set("Connection", "close").
         set("Content-Type", "application/x-www-form-urlencoded").
         send_string(&body);
 
